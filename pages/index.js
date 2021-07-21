@@ -43,7 +43,7 @@ function ProfileRelationsBox(propriedades) {
   </ProfileRelationsBoxWrapper>
   )
 }
-
+  //
 export default function Home() {
   const githubUser = 'Ewerson2';
   const [comunidades, setComunidades] = React.useState([{
