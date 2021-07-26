@@ -23,13 +23,13 @@ function ProfileSidebar(propriedades) {
 }
 
 function ProfileRelationsBox(propriedades) {
-  return(
+  return (
     <ProfileRelationsBoxWrapper>
-    <h2 className="smallTitle">
-     {propriedades.title} ({propriedades.items.length})
-    </h2>
-    <ul>
-      {/* {seguidores.map((itemAtual) => {
+      <h2 className="smallTitle">
+        {propriedades.title} ({propriedades.items.length})
+      </h2>
+      <ul>
+        {/* {seguidores.map((itemAtual) => {
         return (
           <li key={itemAtual}>
             <a href={`https://${itemAtual}.png`}>
@@ -39,38 +39,14 @@ function ProfileRelationsBox(propriedades) {
           </li>
         )
       })} */}
-    </ul>
-  </ProfileRelationsBoxWrapper>
+      </ul>
+    </ProfileRelationsBoxWrapper>
   )
 }
-  //
+//
 export default function Home() {
   const githubUser = 'Ewerson2';
-  const [comunidades, setComunidades] = React.useState([{
-    id: '123451245865324865416543286537423413',
-    title: 'Eu odeio acordar cedo',
-    image: 'https://alurakut.vercel.app/capa-comunidade-01.jpg'
-  }, {
-    id: '12345124586532486541653413',
-    title: 'Eu nunca morri na minha vida',
-    image: 'https://thumbs.jusbr.com/imgs.jusbr.com/publications/images/7bdae7b48bd8a4152e980dbd227ed78c'
-  }, {
-    id: '12345124586532483413',
-    title: 'Velhos que parecem velhas',
-    image: 'https://img10.orkut.br.com/community/83ff9554cc363be72cc76fe07a7695cd.jpg'
-  }, {
-    id: '12345124586696332483413',
-    title: 'Herrar é o mano',
-    image: 'https://i2.wp.com/cinemacao.com/wp-content/uploads/2014/12/Will-Smith-Young.jpg?ssl=1'
-  }, {
-    id: '1234467775124586696332483413',
-    title: 'Tenho medo do zé gotinha',
-    image: 'https://i.pinimg.com/736x/49/03/79/490379512b3d5d0fa33365bf1ad11ab8.jpg'
-  }, {
-    id: '1234467775124552341286696332483413',
-    title: 'Vodka connecting people',
-    image: 'https://lh3.googleusercontent.com/proxy/IEG_bcenardYDvhdg0POd4HutqJ2zVoit8zvb-WOrwUOSI1_dHbPXmZ5hOt-wv1Ou7Jib9qj3EvgsT0BxNrAZOe4Up0Hve5_Zw0WNkW2vyBXzkQwdQPe8gERppRQV6SHpBUq__56_1bkwI4p'
-  }]);
+  const [comunidades, setComunidades] = React.useState([]);
   // const comunidades = ['Eu odeio acordar cedo', 'Alurakut'];
   const pessoasFavoritas = ['juunegreiros',
     'omariosouto',
@@ -78,17 +54,44 @@ export default function Home() {
     'vinivilares',
     'GuilhermeMontez',
     'peas']
-  const [seguidores , setSeguidores] = React.useState([]);
+  const [seguidores, setSeguidores] = React.useState([]);
   //0 - pegar p array de dados do github
-    React.useEffect(function(){
-       fetch('https://api.github.com/users/Ewerson2/followers')
-    .then(function (respostaDoServidor) {
-      return respostaDoServidor.json()
+  React.useEffect(function () {
+    fetch('https://api.github.com/users/Ewerson2/followers')
+      .then(function (respostaDoServidor) {
+        return respostaDoServidor.json()
+      })
+      .then(function (respostaCompleta) {
+        setSeguidores(respostaCompleta)
+      })
+    //API GraphQL
+    fetch('https://graphql.datocms.com/', {
+      method: 'POST',
+      headers: {
+        'Authorization': '998d12c94b2c4efda6a2fcc588e409',
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: JSON.stringify({
+        "query": `query {
+        allCommunities {
+          title
+          id
+          imageUrl
+          creatorSlug
+        }
+      }`})
     })
-    .then(function (respostaCompleta) {
-    setSeguidores(respostaCompleta)
-    })
-    }, [])
+      .then((response) => response.json())
+      .then((respostaCompleta) => {
+        const comunidadesVindasDoDato = respostaCompleta.data.allCommunities;
+
+        setComunidades(comunidadesVindasDoDato)
+      })
+    // .then(function (response){
+    // return response.json()
+    // }}
+  }, [])
 
   return (
     <div>
@@ -112,15 +115,30 @@ export default function Home() {
               const dadosDoForm = new FormData(e.target)
 
               const comunidade = {
-                id: new Date().toISOString(),
+
                 title: dadosDoForm.get('title'),
-                image: dadosDoForm.get('image')
+                imageUrl: dadosDoForm.get('image'),
+                creatorSlug: githubUser,
 
               }
 
+              fetch('/api/comunidades', {
+                method: 'POST',
+                headers:{
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(comunidade)
+              })
+              .then(async (response)=> {
+                const dados = await response.json()
+                console.log(dados.registroCriado)
+                const comunidade = dados.registroCriado
+                const comunidadesAtualizadas = [...comunidades, comunidade]
+                setComunidades(comunidadesAtualizadas)
+              })
+
               // comunidades.push('Alura Stars')
-              const comunidadesAtualizadas = [...comunidades, comunidade]
-              setComunidades(comunidadesAtualizadas)
+              
             }}>
               <div>
                 <input placeholder="Qual vai ser o nome da sua comunidade?"
@@ -144,7 +162,7 @@ export default function Home() {
           </Box>
         </div>
         <div className="profileRelationsArea" style={{ gridArea: 'profileRelationsArea' }}>
-          <ProfileRelationsBox title="Seguidores" items={seguidores}/>
+          <ProfileRelationsBox title="Seguidores" items={seguidores} />
 
 
           <ProfileRelationsBoxWrapper>
@@ -173,8 +191,8 @@ export default function Home() {
               {comunidades.map((itemAtual) => {
                 return (
                   <li key={itemAtual.id}>
-                    <a href={`/users/${itemAtual.title}`} >
-                      <img src={itemAtual.image} />
+                    <a href={`/comunities/${itemAtual.id}`} >
+                      <img src={itemAtual.imageUrl} />
                       <span>{itemAtual.title}</span>
                     </a>
                   </li>
