@@ -1,4 +1,6 @@
 import React from 'react'
+import nookies from 'nookies'
+import jwt from 'jsonwebtoken'
 import MainGrid from '../src/components/MainGrid'
 import Box from '../src/components/Box'
 import { AlurakutMenu, AlurakutProfileSidebarMenuDefault, OrkutNostalgicIconSet } from '../src/lib/AlurakutCommons'
@@ -44,8 +46,8 @@ function ProfileRelationsBox(propriedades) {
   )
 }
 //
-export default function Home() {
-  const githubUser = 'Ewerson2';
+export default function Home(props) {
+  const githubUser = props.githubUser
   const [comunidades, setComunidades] = React.useState([]);
   // const comunidades = ['Eu odeio acordar cedo', 'Alurakut'];
   const pessoasFavoritas = ['juunegreiros',
@@ -124,21 +126,21 @@ export default function Home() {
 
               fetch('/api/comunidades', {
                 method: 'POST',
-                headers:{
+                headers: {
                   'Content-Type': 'application/json'
                 },
                 body: JSON.stringify(comunidade)
               })
-              .then(async (response)=> {
-                const dados = await response.json()
-                console.log(dados.registroCriado)
-                const comunidade = dados.registroCriado
-                const comunidadesAtualizadas = [...comunidades, comunidade]
-                setComunidades(comunidadesAtualizadas)
-              })
+                .then(async (response) => {
+                  const dados = await response.json()
+                  console.log(dados.registroCriado)
+                  const comunidade = dados.registroCriado
+                  const comunidadesAtualizadas = [...comunidades, comunidade]
+                  setComunidades(comunidadesAtualizadas)
+                })
 
               // comunidades.push('Alura Stars')
-              
+
             }}>
               <div>
                 <input placeholder="Qual vai ser o nome da sua comunidade?"
@@ -205,4 +207,30 @@ export default function Home() {
       </MainGrid>
     </div>
   )
+}
+export async function getServerSideProps(context) {
+  const cookies = nookies.get(context)
+  const token = cookies.USER_TOKEN
+  
+  const {isAuthenticated} = await fetch('https://alurakut.vercel.app/api/auth', {
+    headers: {
+      authorization: token
+    }
+  })
+  .then((resposta) => resposta.json())
+  if(!isAuthenticated) {
+    return {
+      redirect: {
+        destination: '/login',
+        permanent: false
+      }
+    }
+  }
+  const { githubUser } = jwt.decode(token)
+
+  return {
+    props: {
+      githubUser
+    },
+  }
 }
